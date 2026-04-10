@@ -1,0 +1,6 @@
+.DS_Store
+.env
+.env.*
+.vercel/
+HANDOFF_PROMPT.md
+PROJECT_DOCUMENTATION.md

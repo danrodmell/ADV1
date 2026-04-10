@@ -1,0 +1,185 @@
+═══════════════════════════════════════════════════════════════════
+  VERCEL: CLICKS EXACTOS - PASO A PASO VISUAL
+═══════════════════════════════════════════════════════════════════
+
+TU API KEY (necesitarás en Paso 3):
+YOUR_OPEN_ROUTER_API_KEY
+
+═══════════════════════════════════════════════════════════════════
+FASE 1: PREPARAR EN TU MÁQUINA (en terminal)
+═══════════════════════════════════════════════════════════════════
+
+Terminal → cd FactorySystem/ai-readiness-agent
+
+Copia y pega estos comandos:
+
+  git init
+  git add .
+  git commit -m "Initial: AI Readiness Agent"
+
+Luego:
+
+  git remote add origin https://github.com/TU-USERNAME/ai-readiness-agent.git
+  git branch -M main
+  git push -u origin main
+
+(Reemplaza TU-USERNAME con tu usuario de GitHub)
+
+✅ Verificación: Ve a https://github.com/TU-USERNAME/ai-readiness-agent
+   Deberías ver todos los archivos
+
+═══════════════════════════════════════════════════════════════════
+FASE 2: VERCEL DASHBOARD (En el navegador)
+═══════════════════════════════════════════════════════════════════
+
+CLICK 1: Abre https://vercel.com/dashboard
+         (Login si es necesario)
+
+CLICK 2: Arriba a la derecha → Botón "Add New"
+         ↓
+         → "Project"
+
+CLICK 3: "Continue with GitHub"
+         (Autoriza si lo pide)
+
+CLICK 4: Busca el repo: ai-readiness-agent
+         Click en él
+
+CLICK 5: Click botón azul "Import"
+
+         Ahora ves pantalla de configuración
+         TODAVÍA NO HAGAS CLICK EN DEPLOY
+
+═══════════════════════════════════════════════════════════════════
+FASE 3: AGREGAR API KEY (MUY IMPORTANTE)
+═══════════════════════════════════════════════════════════════════
+
+En la pantalla de Import (ANTES de deploy):
+
+Desplázate hacia abajo
+
+Encontrarás sección: "Environment Variables"
+
+CLICK en el campo de Name/Value
+
+Llena:
+  Name:  OPEN_ROUTER_API_KEY
+  Value: YOUR_OPEN_ROUTER_API_KEY
+
+Click: "Add" o "Save"
+
+Verifica que veas:
+  OPEN_ROUTER_API_KEY = YOUR_OPEN_ROUTER_API_KEY
+
+═══════════════════════════════════════════════════════════════════
+FASE 4: DEPLOYAR (El click final)
+═══════════════════════════════════════════════════════════════════
+
+CLICK 6: Botón azul grande: "Deploy"
+
+Espera 1-2 minutos mientras Vercel:
+  ✓ Descarga código
+  ✓ Instala dependencias
+  ✓ Configura serverless
+  ✓ Build completo
+
+Cuando veas pantalla verde con:
+  ✓ Production
+
+CLICK 7: Botón azul "Visit"
+
+         O ve a:
+         https://tu-proyecto.vercel.app
+
+LISTO - ¡ESTÁS LIVE!
+
+═══════════════════════════════════════════════════════════════════
+FASE 5: VERIFICAR QUE FUNCIONA
+═══════════════════════════════════════════════════════════════════
+
+Tu URL debería mostrar:
+  - Formulario bonito (fondo oscuro)
+  - Campos: Nombre, Email, Empresa, Cargo
+  - Botón: "Continuar al Cuestionario"
+
+Prueba:
+  1. Llena: test@example.com / Test Corp
+  2. Click: "Continuar"
+  3. Contesta 5 preguntas
+  4. Click: "Evaluar"
+  5. Espera 5-10 seg → Recibe Score + Diagnóstico
+
+✅ ¡FUNCIONA!
+
+═══════════════════════════════════════════════════════════════════
+FASE 6: VER LOGS (Donde están tus respuestas)
+═══════════════════════════════════════════════════════════════════
+
+En Vercel dashboard:
+
+Click en tu proyecto: ai-readiness-agent
+
+Arriba → Click tab: "Logs"
+
+Verás:
+  [CONTACT] test@example.com from Test Corp
+  [ASSESSMENT] test@example.com - Score: 62
+
+Todos tus assessments se registran automáticamente
+
+═══════════════════════════════════════════════════════════════════
+RESUMEN: TODA LA SECUENCIA
+═══════════════════════════════════════════════════════════════════
+
+ANTES (en tu máquina):
+  git init + git push              5 min
+
+EN VERCEL (clicks):
+  Dashboard → Add New → Project    2 min
+  Import GitHub repo               1 min
+  Agregar API KEY                  2 min
+  Click Deploy                     2 min
+  Esperar build                    2 min
+
+DESPUÉS (verificación):
+  Test el formulario               3 min
+  Ver logs                         1 min
+
+TOTAL: 18 MINUTOS - ¡TU AGENTE ESTÁ LIVE!
+
+═══════════════════════════════════════════════════════════════════
+SI ALGO FALLA
+═══════════════════════════════════════════════════════════════════
+
+❌ Build failed
+   → Ve a Settings → Environment Variables
+   → Verifica OPEN_ROUTER_API_KEY
+   → Click "Redeploy"
+
+❌ 404 - Página no encontrada
+   → Espera 2-3 min (Vercel aún configura)
+   → Recarga la página
+   → Si persiste: Redeploy
+
+❌ Assessment tarda mucho
+   → ¡NORMAL! Primer attempt tarda ~10 seg
+   → Los siguientes son 3-5 seg
+   → Es el "cold start" de serverless
+
+❌ API key error
+   → Settings → Environment Variables
+   → Verifica nombre exacto: OPEN_ROUTER_API_KEY
+   → Verifica el valor completo
+   → Redeploy
+
+═══════════════════════════════════════════════════════════════════
+COMPARTIR TU LINK
+═══════════════════════════════════════════════════════════════════
+
+Una vez funciona, comparte:
+
+  https://tu-proyecto.vercel.app
+
+¡Cualquiera puede hacer el assessment!
+
+═══════════════════════════════════════════════════════════════════

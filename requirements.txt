@@ -1,0 +1,2 @@
+# No external dependencies needed - using only stdlib (urllib, json, os)
+# Vercel will detect Python and run the handler functions

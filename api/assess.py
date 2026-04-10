@@ -1,0 +1,221 @@
+"""
+api/assess.py - Vercel Serverless Function
+Uses Open Router API (Llama 2 70B) for cost-effective assessment
+"""
+import json
+import os
+from datetime import datetime
+from typing import Dict
+import urllib.request
+import urllib.error
+
+ASSESSMENTS_FILE = "/tmp/assessments.json"
+
+def load_assessments() -> list:
+    """Load existing assessments log"""
+    if os.path.exists(ASSESSMENTS_FILE):
+        try:
+            with open(ASSESSMENTS_FILE, "r") as f:
+                return json.load(f)
+        except json.JSONDecodeError:
+            return []
+    return []
+
+def save_assessments(data: list):
+    """Save assessments log"""
+    try:
+        with open(ASSESSMENTS_FILE, "w") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"[WARNING] Could not save assessments: {str(e)}")
+
+def calculate_score(answers: Dict[str, int]) -> int:
+    """Calculate AI Readiness score (0-100)"""
+    total = sum(answers.values())
+    # 10 questions × 3 max = 30 total
+    return int((total / 30) * 100)
+
+def categorize_maturity(score: int) -> str:
+    """Categorize maturity level"""
+    if score < 25:
+        return "Emergente"
+    elif score < 50:
+        return "Inicial"
+    elif score < 75:
+        return "Intermedia"
+    else:
+        return "Avanzada"
+
+def call_open_router(prompt: str, api_key: str) -> str:
+    """Call Open Router API with Llama 2 70B"""
+    
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "HTTP-Referer": "https://ai-readiness-assessment.vercel.app",
+        "X-Title": "AI Readiness Assessment",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "model": "meta-llama/llama-2-70b-chat",
+        "messages": [
+            {
+                "role": "system",
+                "content": "Eres un experto en transformación digital y adopción de AI en organizaciones. Responde en español, de manera profesional pero conversacional. Sé conciso y directo, sin fluff."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        "temperature": 0.7,
+        "max_tokens": 500,
+        "top_p": 0.9
+    }
+    
+    try:
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode('utf-8'),
+            headers=headers,
+            method='POST'
+        )
+        
+        with urllib.request.urlopen(req, timeout=30) as response:
+            result = json.loads(response.read().decode('utf-8'))
+            
+            if 'choices' in result and len(result['choices']) > 0:
+                return result['choices'][0]['message']['content']
+            else:
+                raise ValueError("Unexpected API response format")
+    
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode('utf-8')
+        print(f"[ERROR] Open Router HTTP Error: {e.code}")
+        print(f"[ERROR] Response: {error_body}")
+        raise Exception(f"Open Router API error: {e.code}")
+    except urllib.error.URLError as e:
+        print(f"[ERROR] Open Router URL Error: {str(e)}")
+        raise Exception(f"Network error: {str(e)}")
+    except Exception as e:
+        print(f"[ERROR] Open Router call failed: {str(e)}")
+        raise
+
+def handler(request):
+    """
+    POST /api/assess
+    Body: {
+        contact: { fullname, email, company, role },
+        answers: { q1: int, q2: int, ..., q10: int }
+    }
+    
+    Returns: {
+        score: int,
+        diagnosis: str,
+        maturity: str
+    }
+    """
+    if request.method != "POST":
+        return {
+            "statusCode": 405,
+            "body": json.dumps({"error": "Method not allowed"})
+        }
+
+    try:
+        data = json.loads(request.body)
+        contact = data.get("contact", {})
+        answers = data.get("answers", {})
+        
+        # Validate answers
+        if not all(f"q{i}" in answers for i in range(1, 11)):
+            return {
+                "statusCode": 400,
+                "body": json.dumps({"error": "Missing questions in answers"})
+            }
+        
+        score = calculate_score(answers)
+        maturity = categorize_maturity(score)
+        
+        # Get API key
+        api_key = os.getenv("OPEN_ROUTER_API_KEY")
+        if not api_key:
+            raise ValueError("OPEN_ROUTER_API_KEY not set")
+        
+        # Build prompt
+        prompt = f"""Tu organización tiene un score de AI Readiness de {score}/100 ({maturity}).
+
+Respuestas del assessment (escala 1-3, donde 3 es más maduro):
+1. Estrategia de Datos: {answers.get('q1', 1)}
+2. Skills de AI en la org: {answers.get('q2', 1)}
+3. Infraestructura Cloud: {answers.get('q3', 1)}
+4. Gobernanza/Privacidad: {answers.get('q4', 1)}
+5. Use Cases Identificados: {answers.get('q5', 1)}
+6. Presupuesto AI: {answers.get('q6', 1)}
+7. Talento ML/AI: {answers.get('q7', 1)}
+8. Change Management: {answers.get('q8', 1)}
+9. Data Pipeline/MLOps: {answers.get('q9', 1)}
+10. Deployment en Producción: {answers.get('q10', 1)}
+
+Proporciona un diagnóstico ejecutivo en formato:
+1. DIAGNÓSTICO (2-3 párrafos sobre el estado actual - sé específico basado en los scores)
+2. TOP 3 RECOMENDACIONES (numeradas y prioritizadas)
+3. RUTA 6-12 MESES (2-3 hitos clave)
+
+Total máximo 350 palabras. Tono: profesional, director-friendly, directo."""
+
+        # Call Open Router
+        diagnosis = call_open_router(prompt, api_key)
+        
+        # Save to log
+        assessment_record = {
+            "id": datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat(),
+            "type": "assessment",
+            "contact": contact,
+            "answers": answers,
+            "score": score,
+            "maturity": maturity,
+            "diagnosis_snippet": diagnosis[:200]
+        }
+        
+        assessments = load_assessments()
+        assessments.append(assessment_record)
+        save_assessments(assessments)
+        
+        print(f"[ASSESSMENT] {contact.get('email')} from {contact.get('company')} - Score: {score}")
+        
+        return {
+            "statusCode": 200,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            },
+            "body": json.dumps({
+                "score": score,
+                "maturity": maturity,
+                "diagnosis": diagnosis
+            }, ensure_ascii=False)
+        }
+    
+    except ValueError as ve:
+        print(f"[ERROR] Configuration: {str(ve)}")
+        return {
+            "statusCode": 500,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({"error": "API key not configured"})
+        }
+    except json.JSONDecodeError:
+        return {
+            "statusCode": 400,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({"error": "Invalid JSON"})
+        }
+    except Exception as e:
+        print(f"[ERROR] Assessment handler: {str(e)}")
+        return {
+            "statusCode": 500,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({"error": f"Error processing assessment"})
+        }
