@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Dict
 import urllib.request
 import urllib.error
+from http.server import BaseHTTPRequestHandler
 
 ASSESSMENTS_FILE = "/tmp/assessments.json"
 
@@ -103,7 +104,7 @@ def call_open_router(prompt: str, api_key: str) -> str:
         print(f"[ERROR] Open Router call failed: {str(e)}")
         raise
 
-def handler(request):
+class handler(BaseHTTPRequestHandler):
     """
     POST /api/assess
     Body: {
@@ -117,34 +118,47 @@ def handler(request):
         maturity: str
     }
     """
-    if request.method != "POST":
-        return {
-            "statusCode": 405,
-            "body": json.dumps({"error": "Method not allowed"})
-        }
 
-    try:
-        data = json.loads(request.body)
-        contact = data.get("contact", {})
-        answers = data.get("answers", {})
-        
-        # Validate answers
-        if not all(f"q{i}" in answers for i in range(1, 11)):
-            return {
-                "statusCode": 400,
-                "body": json.dumps({"error": "Missing questions in answers"})
-            }
-        
-        score = calculate_score(answers)
-        maturity = categorize_maturity(score)
-        
-        # Get API key
-        api_key = os.getenv("OPEN_ROUTER_API_KEY")
-        if not api_key:
-            raise ValueError("OPEN_ROUTER_API_KEY not set")
-        
-        # Build prompt
-        prompt = f"""Tu organización tiene un score de AI Readiness de {score}/100 ({maturity}).
+    def _send_json(self, status_code: int, payload: dict):
+        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        self.send_response(status_code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+        self.end_headers()
+
+    def do_POST(self):
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+            body = self.rfile.read(length).decode("utf-8") if length else "{}"
+            data = json.loads(body)
+            contact = data.get("contact", {})
+            answers = data.get("answers", {})
+            
+            # Validate answers
+            if not all(f"q{i}" in answers for i in range(1, 11)):
+                self._send_json(400, {"error": "Missing questions in answers"})
+                return
+            
+            score = calculate_score(answers)
+            maturity = categorize_maturity(score)
+            
+            # Get API key
+            api_key = os.getenv("OPEN_ROUTER_API_KEY")
+            if not api_key:
+                raise ValueError("OPEN_ROUTER_API_KEY not set")
+            
+            # Build prompt
+            prompt = f"""Tu organización tiene un score de AI Readiness de {score}/100 ({maturity}).
 
 Respuestas del assessment (escala 1-3, donde 3 es más maduro):
 1. Estrategia de Datos: {answers.get('q1', 1)}
@@ -165,57 +179,38 @@ Proporciona un diagnóstico ejecutivo en formato:
 
 Total máximo 350 palabras. Tono: profesional, director-friendly, directo."""
 
-        # Call Open Router
-        diagnosis = call_open_router(prompt, api_key)
-        
-        # Save to log
-        assessment_record = {
-            "id": datetime.now().isoformat(),
-            "timestamp": datetime.now().isoformat(),
-            "type": "assessment",
-            "contact": contact,
-            "answers": answers,
-            "score": score,
-            "maturity": maturity,
-            "diagnosis_snippet": diagnosis[:200]
-        }
-        
-        assessments = load_assessments()
-        assessments.append(assessment_record)
-        save_assessments(assessments)
-        
-        print(f"[ASSESSMENT] {contact.get('email')} from {contact.get('company')} - Score: {score}")
-        
-        return {
-            "statusCode": 200,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-            },
-            "body": json.dumps({
+            # Call Open Router
+            diagnosis = call_open_router(prompt, api_key)
+            
+            # Save to log
+            assessment_record = {
+                "id": datetime.now().isoformat(),
+                "timestamp": datetime.now().isoformat(),
+                "type": "assessment",
+                "contact": contact,
+                "answers": answers,
+                "score": score,
+                "maturity": maturity,
+                "diagnosis_snippet": diagnosis[:200]
+            }
+            
+            assessments = load_assessments()
+            assessments.append(assessment_record)
+            save_assessments(assessments)
+            
+            print(f"[ASSESSMENT] {contact.get('email')} from {contact.get('company')} - Score: {score}")
+            
+            self._send_json(200, {
                 "score": score,
                 "maturity": maturity,
                 "diagnosis": diagnosis
-            }, ensure_ascii=False)
-        }
-    
-    except ValueError as ve:
-        print(f"[ERROR] Configuration: {str(ve)}")
-        return {
-            "statusCode": 500,
-            "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({"error": "API key not configured"})
-        }
-    except json.JSONDecodeError:
-        return {
-            "statusCode": 400,
-            "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({"error": "Invalid JSON"})
-        }
-    except Exception as e:
-        print(f"[ERROR] Assessment handler: {str(e)}")
-        return {
-            "statusCode": 500,
-            "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({"error": f"Error processing assessment"})
-        }
+            })
+        
+        except ValueError as ve:
+            print(f"[ERROR] Configuration: {str(ve)}")
+            self._send_json(500, {"error": "API key not configured"})
+        except json.JSONDecodeError:
+            self._send_json(400, {"error": "Invalid JSON"})
+        except Exception as e:
+            print(f"[ERROR] Assessment handler: {str(e)}")
+            self._send_json(500, {"error": "Error processing assessment"})
