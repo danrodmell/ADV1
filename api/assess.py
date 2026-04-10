@@ -60,7 +60,7 @@ def call_open_router(prompt: str, api_key: str) -> str:
     }
     
     payload = {
-        "model": "meta-llama/llama-2-70b-chat",
+        "model": "openrouter/auto",
         "messages": [
             {
                 "role": "system",
