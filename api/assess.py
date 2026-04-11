@@ -47,14 +47,14 @@ def categorize_maturity(score: int) -> str:
     else:
         return "Avanzada"
 
-def call_open_router(prompt: str, api_key: str) -> str:
+def call_open_router(prompt: str, api_key: str, referer: str | None = None) -> str:
     """Call Open Router API with Llama 2 70B"""
     
     url = "https://openrouter.ai/api/v1/chat/completions"
     
     headers = {
         "Authorization": f"Bearer {api_key}",
-        "HTTP-Referer": "https://ai-readiness-assessment.vercel.app",
+        "HTTP-Referer": referer or "https://ai-readiness-assessment.vercel.app",
         "X-Title": "AI Readiness Assessment",
         "Content-Type": "application/json"
     }
@@ -87,36 +87,33 @@ def call_open_router(prompt: str, api_key: str) -> str:
         with urllib.request.urlopen(req, timeout=30) as response:
             result = json.loads(response.read().decode('utf-8'))
             content = None
+            def extract_text(value):
+                if isinstance(value, str):
+                    return value.strip() or None
+                if isinstance(value, dict):
+                    for key in ("text", "content", "value"):
+                        text = extract_text(value.get(key))
+                        if text:
+                            return text
+                    for key in ("message", "delta"):
+                        text = extract_text(value.get(key))
+                        if text:
+                            return text
+                    return None
+                if isinstance(value, list):
+                    for item in value:
+                        text = extract_text(item)
+                        if text:
+                            return text
+                return None
             if isinstance(result, dict):
                 choices = result.get("choices")
                 if isinstance(choices, list) and choices:
                     first = choices[0] if isinstance(choices[0], dict) else None
                     if isinstance(first, dict):
-                        message = first.get("message")
-                        if isinstance(message, dict):
-                            content = message.get("content")
-                            if isinstance(content, list):
-                                parts = []
-                                for part in content:
-                                    if isinstance(part, str):
-                                        parts.append(part)
-                                    elif isinstance(part, dict):
-                                        for key in ("text", "content", "value"):
-                                            if isinstance(part.get(key), str):
-                                                parts.append(part.get(key))
-                                                break
-                                content = "".join(parts).strip() or None
-                            elif isinstance(content, dict):
-                                for key in ("text", "content", "value"):
-                                    if isinstance(content.get(key), str):
-                                        content = content.get(key)
-                                        break
-                        if content is None:
-                            content = first.get("text") if isinstance(first.get("text"), str) else None
-                        if content is None:
-                            content = first.get("content") if isinstance(first.get("content"), str) else None
+                        content = extract_text(first)
                 if content is None:
-                    content = result.get("output_text") if isinstance(result.get("output_text"), str) else None
+                    content = extract_text(result.get("output_text"))
             if content:
                 return content
             raise ValueError(f"Unexpected API response format: keys={list(result.keys()) if isinstance(result, dict) else type(result)}")
@@ -208,8 +205,9 @@ Proporciona un diagnóstico ejecutivo en formato:
 
 Total máximo 350 palabras. Tono: profesional, director-friendly, directo."""
 
+            referer = self.headers.get("origin") or self.headers.get("referer")
             # Call Open Router
-            diagnosis = call_open_router(prompt, api_key)
+            diagnosis = call_open_router(prompt, api_key, referer=referer)
             
             # Save to log
             assessment_record = {
