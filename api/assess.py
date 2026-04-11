@@ -86,11 +86,22 @@ def call_open_router(prompt: str, api_key: str) -> str:
         
         with urllib.request.urlopen(req, timeout=30) as response:
             result = json.loads(response.read().decode('utf-8'))
-            
-            if 'choices' in result and len(result['choices']) > 0:
-                return result['choices'][0]['message']['content']
-            else:
-                raise ValueError("Unexpected API response format")
+            content = None
+            if isinstance(result, dict):
+                choices = result.get("choices")
+                if isinstance(choices, list) and choices:
+                    first = choices[0] if isinstance(choices[0], dict) else None
+                    if isinstance(first, dict):
+                        message = first.get("message")
+                        if isinstance(message, dict):
+                            content = message.get("content")
+                        if content is None:
+                            content = first.get("text")
+                if content is None:
+                    content = result.get("output_text")
+            if content:
+                return content
+            raise ValueError(f"Unexpected API response format: keys={list(result.keys()) if isinstance(result, dict) else type(result)}")
     
     except urllib.error.HTTPError as e:
         error_body = e.read().decode('utf-8')
