@@ -87,6 +87,20 @@ def call_open_router(prompt: str, api_key: str) -> str:
         with urllib.request.urlopen(req, timeout=30) as response:
             result = json.loads(response.read().decode('utf-8'))
             content = None
+            def _first_text(value):
+                if isinstance(value, str):
+                    return value.strip() or None
+                if isinstance(value, list):
+                    for item in value:
+                        text = _first_text(item)
+                        if text:
+                            return text
+                if isinstance(value, dict):
+                    for item in value.values():
+                        text = _first_text(item)
+                        if text:
+                            return text
+                return None
             if isinstance(result, dict):
                 choices = result.get("choices")
                 if isinstance(choices, list) and choices:
@@ -105,6 +119,8 @@ def call_open_router(prompt: str, api_key: str) -> str:
                             content = first.get("text")
                         if content is None:
                             content = first.get("content")
+                        if content is None:
+                            content = _first_text(first)
                 if content is None:
                     content = result.get("output_text")
             if content:
