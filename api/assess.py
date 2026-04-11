@@ -60,7 +60,7 @@ def call_open_router(prompt: str, api_key: str) -> str:
     }
     
     payload = {
-        "model": "openrouter/auto",
+        "model": "google/gemma-4-26b-a4b-it:free",
         "messages": [
             {
                 "role": "system",
