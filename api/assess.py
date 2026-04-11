@@ -87,20 +87,6 @@ def call_open_router(prompt: str, api_key: str) -> str:
         with urllib.request.urlopen(req, timeout=30) as response:
             result = json.loads(response.read().decode('utf-8'))
             content = None
-            def _first_text(value):
-                if isinstance(value, str):
-                    return value.strip() or None
-                if isinstance(value, list):
-                    for item in value:
-                        text = _first_text(item)
-                        if text:
-                            return text
-                if isinstance(value, dict):
-                    for item in value.values():
-                        text = _first_text(item)
-                        if text:
-                            return text
-                return None
             if isinstance(result, dict):
                 choices = result.get("choices")
                 if isinstance(choices, list) and choices:
@@ -113,16 +99,19 @@ def call_open_router(prompt: str, api_key: str) -> str:
                                 content = "".join(
                                     part.get("text", "")
                                     for part in content
-                                    if isinstance(part, dict)
+                                    if isinstance(part, dict) and isinstance(part.get("text"), str)
                                 ).strip() or None
+                            elif isinstance(content, dict):
+                                if isinstance(content.get("text"), str):
+                                    content = content.get("text")
+                                elif isinstance(content.get("content"), str):
+                                    content = content.get("content")
                         if content is None:
-                            content = first.get("text")
+                            content = first.get("text") if isinstance(first.get("text"), str) else None
                         if content is None:
-                            content = first.get("content")
-                        if content is None:
-                            content = _first_text(first)
+                            content = first.get("content") if isinstance(first.get("content"), str) else None
                 if content is None:
-                    content = result.get("output_text")
+                    content = result.get("output_text") if isinstance(result.get("output_text"), str) else None
             if content:
                 return content
             raise ValueError(f"Unexpected API response format: keys={list(result.keys()) if isinstance(result, dict) else type(result)}")
