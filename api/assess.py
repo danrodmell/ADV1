@@ -95,8 +95,16 @@ def call_open_router(prompt: str, api_key: str) -> str:
                         message = first.get("message")
                         if isinstance(message, dict):
                             content = message.get("content")
+                            if isinstance(content, list):
+                                content = "".join(
+                                    part.get("text", "")
+                                    for part in content
+                                    if isinstance(part, dict)
+                                ).strip() or None
                         if content is None:
                             content = first.get("text")
+                        if content is None:
+                            content = first.get("content")
                 if content is None:
                     content = result.get("output_text")
             if content:
