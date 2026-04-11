@@ -60,7 +60,7 @@ def call_open_router(prompt: str, api_key: str) -> str:
     }
     
     payload = {
-        "model": "qwen/qwen3.6-plus:free",
+        "model": "moonshotai/kimi-k2.5",
         "messages": [
             {
                 "role": "system",
