@@ -1,6 +1,7 @@
 """
 api/assess.py - Vercel Serverless Function
-Uses Open Router API (Llama 2 70B) for cost-effective assessment
+Required env vars: OPENAI_API_KEY
+Optional: MODEL_NAME (default: gpt-4o-mini)
 """
 import json
 import os
@@ -57,8 +58,9 @@ def call_openai(prompt: str, api_key: str) -> str:
         "Content-Type": "application/json"
     }
     
+    model = os.getenv("MODEL_NAME", "gpt-4o-mini")
     payload = {
-        "model": "gpt-5-mini",
+        "model": model,
         "messages": [
             {
                 "role": "system",
@@ -71,7 +73,7 @@ def call_openai(prompt: str, api_key: str) -> str:
         ],
         "max_completion_tokens": 500
     }
-    print(f"[DEBUG] OpenAI request model={payload.get('model')} max_completion_tokens={payload.get('max_completion_tokens')} top_p={payload.get('top_p')}")
+    print(f"[DEBUG] OpenAI request model={payload.get('model')} max_completion_tokens={payload.get('max_completion_tokens')}")
     
     try:
         req = urllib.request.Request(
@@ -83,38 +85,11 @@ def call_openai(prompt: str, api_key: str) -> str:
         
         with urllib.request.urlopen(req, timeout=30) as response:
             result = json.loads(response.read().decode('utf-8'))
-            content = None
             print(f"[DEBUG] OpenAI response keys={list(result.keys()) if isinstance(result, dict) else type(result)}")
-            def extract_text(value):
-                if isinstance(value, str):
-                    return value.strip() or None
-                if isinstance(value, dict):
-                    for key in ("text", "content", "value"):
-                        text = extract_text(value.get(key))
-                        if text:
-                            return text
-                    for key in ("message", "delta"):
-                        text = extract_text(value.get(key))
-                        if text:
-                            return text
-                    return None
-                if isinstance(value, list):
-                    for item in value:
-                        text = extract_text(item)
-                        if text:
-                            return text
-                return None
-            if isinstance(result, dict):
-                choices = result.get("choices")
-                if isinstance(choices, list) and choices:
-                    first = choices[0] if isinstance(choices[0], dict) else None
-                    if isinstance(first, dict):
-                        content = extract_text(first)
-                if content is None:
-                    content = extract_text(result.get("output_text"))
-            if content:
-                return content
-            raise ValueError(f"Unexpected API response format: keys={list(result.keys()) if isinstance(result, dict) else type(result)}")
+            content = result["choices"][0]["message"]["content"].strip()
+            if not content:
+                raise ValueError("Empty content in OpenAI response")
+            return content
     
     except urllib.error.HTTPError as e:
         error_body = e.read().decode('utf-8')
@@ -237,4 +212,4 @@ Total máximo 350 palabras. Tono: profesional, director-friendly, directo."""
             self._send_json(400, {"error": "Invalid JSON"})
         except Exception as e:
             print(f"[ERROR] Assessment handler: {str(e)}")
-            self._send_json(500, {"error": "Error processing assessment"})
+            self._send_json(500, {"error": "Assessment failed", "detail": str(e)})
