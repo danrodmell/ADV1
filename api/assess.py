@@ -47,20 +47,18 @@ def categorize_maturity(score: int) -> str:
     else:
         return "Avanzada"
 
-def call_open_router(prompt: str, api_key: str, referer: str | None = None) -> str:
-    """Call Open Router API with Llama 2 70B"""
+def call_openai(prompt: str, api_key: str) -> str:
+    """Call OpenAI Chat Completions API"""
     
-    url = "https://openrouter.ai/api/v1/chat/completions"
+    url = "https://api.openai.com/v1/chat/completions"
     
     headers = {
         "Authorization": f"Bearer {api_key}",
-        "HTTP-Referer": referer or "https://ai-readiness-assessment.vercel.app",
-        "X-Title": "AI Readiness Assessment",
         "Content-Type": "application/json"
     }
     
     payload = {
-        "model": "moonshotai/kimi-k2.5",
+        "model": "gpt-5-mini",
         "messages": [
             {
                 "role": "system",
@@ -120,14 +118,14 @@ def call_open_router(prompt: str, api_key: str, referer: str | None = None) -> s
     
     except urllib.error.HTTPError as e:
         error_body = e.read().decode('utf-8')
-        print(f"[ERROR] Open Router HTTP Error: {e.code}")
+        print(f"[ERROR] OpenAI HTTP Error: {e.code}")
         print(f"[ERROR] Response: {error_body}")
-        raise Exception(f"Open Router API error: {e.code}")
+        raise Exception(f"OpenAI API error: {e.code}")
     except urllib.error.URLError as e:
-        print(f"[ERROR] Open Router URL Error: {str(e)}")
+        print(f"[ERROR] OpenAI URL Error: {str(e)}")
         raise Exception(f"Network error: {str(e)}")
     except Exception as e:
-        print(f"[ERROR] Open Router call failed: {str(e)}")
+        print(f"[ERROR] OpenAI call failed: {str(e)}")
         raise
 
 class handler(BaseHTTPRequestHandler):
@@ -179,9 +177,9 @@ class handler(BaseHTTPRequestHandler):
             maturity = categorize_maturity(score)
             
             # Get API key
-            api_key = os.getenv("OPEN_ROUTER_API_KEY")
+            api_key = os.getenv("OPENAI_API_KEY")
             if not api_key:
-                raise ValueError("OPEN_ROUTER_API_KEY not set")
+                raise ValueError("OPENAI_API_KEY not set")
             
             # Build prompt
             prompt = f"""Tu organización tiene un score de AI Readiness de {score}/100 ({maturity}).
@@ -205,9 +203,8 @@ Proporciona un diagnóstico ejecutivo en formato:
 
 Total máximo 350 palabras. Tono: profesional, director-friendly, directo."""
 
-            referer = self.headers.get("origin") or self.headers.get("referer")
-            # Call Open Router
-            diagnosis = call_open_router(prompt, api_key, referer=referer)
+            # Call OpenAI
+            diagnosis = call_openai(prompt, api_key)
             
             # Save to log
             assessment_record = {
