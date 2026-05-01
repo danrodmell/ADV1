@@ -73,6 +73,7 @@ def call_openai(prompt: str, api_key: str) -> str:
         "max_completion_tokens": 500,
         "top_p": 0.9
     }
+    print(f"[DEBUG] OpenAI request model={payload.get('model')} max_completion_tokens={payload.get('max_completion_tokens')} top_p={payload.get('top_p')}")
     
     try:
         req = urllib.request.Request(
@@ -85,6 +86,7 @@ def call_openai(prompt: str, api_key: str) -> str:
         with urllib.request.urlopen(req, timeout=30) as response:
             result = json.loads(response.read().decode('utf-8'))
             content = None
+            print(f"[DEBUG] OpenAI response keys={list(result.keys()) if isinstance(result, dict) else type(result)}")
             def extract_text(value):
                 if isinstance(value, str):
                     return value.strip() or None
