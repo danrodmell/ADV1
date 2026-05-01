@@ -69,9 +69,7 @@ def call_openai(prompt: str, api_key: str) -> str:
                 "content": prompt
             }
         ],
-        "temperature": 0.7,
-        "max_completion_tokens": 500,
-        "top_p": 0.9
+        "max_completion_tokens": 500
     }
     print(f"[DEBUG] OpenAI request model={payload.get('model')} max_completion_tokens={payload.get('max_completion_tokens')} top_p={payload.get('top_p')}")
     
