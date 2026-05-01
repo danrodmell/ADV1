@@ -70,7 +70,7 @@ def call_openai(prompt: str, api_key: str) -> str:
             }
         ],
         "temperature": 0.7,
-        "max_tokens": 500,
+        "max_completion_tokens": 500,
         "top_p": 0.9
     }
     
