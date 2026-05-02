@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Readiness — Dan Melendez</title>
+<meta name="description" content="A 30-minute diagnostic that tells founders and operators whether they have an AI problem or an ops problem — and exactly what to fix first.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://beamish-starlight-f50127.netlify.app/">
+<meta property="og:title" content="AI Readiness Assessment — Dan Melendez">
+<meta property="og:description" content="A 30-minute diagnostic that tells founders and operators whether they have an AI problem or an ops problem — and exactly what to fix first.">
+<meta property="og:image" content="https://beamish-starlight-f50127.netlify.app/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AI Readiness Assessment — Dan Melendez">
+<meta name="twitter:description" content="A 30-minute diagnostic that tells founders and operators whether they have an AI problem or an ops problem.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #0c0c0c;
+    --paper: #f5f2eb;
+    --muted: #6b6760;
+    --accent: #c8410a;
+    --border: #d4cfc4;
+    --serif: 'Playfair Display', Georgia, serif;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .noise {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 0; opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  }
+
+  .page { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 0 2rem; }
+
+  /* NAV */
+  nav {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 2rem 0; border-bottom: 1px solid var(--border);
+  }
+  .nav-brand {
+    font-family: var(--mono); font-size: 13px; font-weight: 500;
+    letter-spacing: 0.05em; color: var(--ink); text-decoration: none;
+  }
+  .nav-sub {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    letter-spacing: 0.08em; text-transform: uppercase; text-decoration: none;
+  }
+
+  /* HERO */
+  .hero {
+    padding: 5rem 0 4rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero-label {
+    font-family: var(--mono); font-size: 11px; color: var(--accent);
+    letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 2rem;
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .hero-label::before {
+    content: ''; display: block; width: 32px; height: 1px; background: var(--accent);
+  }
+  .hero h1 {
+    font-family: var(--serif); font-size: clamp(2.8rem, 6vw, 4.8rem);
+    font-weight: 900; line-height: 1.05; letter-spacing: -0.02em;
+    color: var(--ink); margin-bottom: 2rem;
+  }
+  .hero h1 em {
+    font-style: italic; color: var(--accent);
+  }
+  .hero-sub {
+    font-family: var(--sans); font-size: 1.15rem; font-weight: 300;
+    color: var(--muted); max-width: 560px; line-height: 1.7;
+    border-left: 2px solid var(--border); padding-left: 1.25rem;
+  }
+
+  /* SECTION COMMONS */
+  section { padding: 4rem 0; border-bottom: 1px solid var(--border); }
+  .section-label {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 2.5rem;
+  }
+
+  /* AXES */
+  .axes-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+    background: var(--border); border: 1px solid var(--border);
+  }
+  .axis {
+    background: var(--paper); padding: 2rem 1.75rem;
+  }
+  .axis-tag {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 1rem;
+  }
+  .axis h3 {
+    font-family: var(--serif); font-size: 1.5rem; font-weight: 700;
+    margin-bottom: 0.75rem; line-height: 1.2;
+  }
+  .axis p {
+    font-size: 0.9rem; color: var(--muted); line-height: 1.65;
+  }
+  .axis-num {
+    font-family: var(--mono); font-size: 3rem; font-weight: 500;
+    color: var(--border); line-height: 1; margin-bottom: 1rem;
+  }
+
+  /* CLASSIFICATIONS */
+  .class-list { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); }
+  .class-item {
+    background: var(--paper); display: grid;
+    grid-template-columns: 80px 1fr 1fr; align-items: start; gap: 0;
+  }
+  .class-grade {
+    padding: 1.75rem; border-right: 1px solid var(--border);
+    font-family: var(--serif); font-size: 2.5rem; font-weight: 900;
+    line-height: 1;
+  }
+  .grade-a { color: var(--ink); }
+  .grade-b { color: var(--muted); }
+  .grade-c { color: var(--border); }
+  .class-name {
+    padding: 1.75rem 1.5rem; border-right: 1px solid var(--border);
+  }
+  .class-name strong {
+    display: block; font-family: var(--serif); font-size: 1.1rem;
+    font-weight: 700; margin-bottom: 0.5rem;
+  }
+  .class-name span {
+    font-family: var(--mono); font-size: 11px; color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+  .class-desc { padding: 1.75rem 1.5rem; font-size: 0.875rem; color: var(--muted); line-height: 1.65; }
+
+  /* CRED */
+  .cred-block {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start;
+  }
+  .cred-stat {
+    display: flex; flex-direction: column; gap: 0.25rem;
+  }
+  .cred-stat .num {
+    font-family: var(--serif); font-size: 3.5rem; font-weight: 900;
+    line-height: 1; color: var(--ink);
+  }
+  .cred-stat .label {
+    font-family: var(--sans); font-size: 0.85rem; color: var(--muted);
+    line-height: 1.5; max-width: 180px;
+  }
+  .cred-stats { display: flex; flex-direction: column; gap: 2rem; }
+  .cred-bio { font-size: 0.95rem; color: var(--muted); line-height: 1.8; }
+  .cred-bio strong { color: var(--ink); font-weight: 500; }
+  .substack-link {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    font-family: var(--mono); font-size: 11px; color: var(--accent);
+    text-decoration: none; letter-spacing: 0.05em; margin-top: 1rem;
+  }
+  .substack-link:hover { text-decoration: underline; }
+
+  /* CTA */
+  .cta-section {
+    padding: 5rem 0 6rem; border-bottom: none;
+    display: flex; flex-direction: column; align-items: flex-start;
+  }
+  .cta-eyebrow {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 1.5rem;
+  }
+  .cta-headline {
+    font-family: var(--serif); font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 900; line-height: 1.1; margin-bottom: 1.5rem; max-width: 600px;
+  }
+  .cta-sub {
+    font-size: 0.95rem; color: var(--muted); margin-bottom: 2.5rem;
+    max-width: 480px; line-height: 1.7;
+  }
+  .cta-btn {
+    display: inline-flex; align-items: center; gap: 1rem;
+    background: var(--ink); color: var(--paper);
+    font-family: var(--mono); font-size: 13px; font-weight: 500;
+    letter-spacing: 0.05em; padding: 1.1rem 2rem;
+    text-decoration: none; border: none; cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+  .cta-btn:hover { background: var(--accent); }
+  .cta-btn:active { transform: scale(0.98); }
+  .cta-arrow {
+    font-size: 1rem; transition: transform 0.2s ease;
+  }
+  .cta-btn:hover .cta-arrow { transform: translateX(4px); }
+  .cta-note {
+    margin-top: 1rem; font-family: var(--mono); font-size: 11px;
+    color: var(--muted); letter-spacing: 0.04em;
+  }
+  .cta-secondary {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    text-decoration: none; letter-spacing: 0.05em; margin-top: 1.5rem;
+  }
+  .cta-secondary:hover { color: var(--accent); text-decoration: underline; }
+
+  /* FOOTER */
+  footer {
+    padding: 2rem 0; border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  footer p { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .hero h1 { animation: fadeUp 0.7s ease both; }
+  .hero-sub { animation: fadeUp 0.7s 0.15s ease both; }
+  .hero-label { animation: fadeUp 0.5s ease both; }
+
+  @media (max-width: 640px) {
+    .axes-grid { grid-template-columns: 1fr; }
+    .class-item { grid-template-columns: 60px 1fr; }
+    .class-desc { display: none; }
+    .cred-block { grid-template-columns: 1fr; gap: 2rem; }
+  }
+</style>
+</head>
+<body>
+<div class="noise"></div>
+
+<div class="page">
+
+  <nav>
+    <a href="#" class="nav-brand">Dan Melendez</a>
+    <a href="https://danrodmell.substack.com" class="nav-sub" target="_blank" rel="noopener">danrodmell.substack.com</a>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-label">AI Readiness Assessment</div>
+    <h1>Your company has<br>an AI problem.<br>Or an <em>ops</em> problem.<br>Most can't tell.</h1>
+    <p class="hero-sub">
+      The two look identical from the outside — and they require completely different fixes.
+      A 30-minute conversation can tell you which one you're dealing with.
+    </p>
+  </section>
+
+  <section>
+    <div class="section-label">The Framework</div>
+    <div class="axes-grid">
+      <div class="axis">
+        <div class="axis-num">01</div>
+        <div class="axis-tag">Axis One</div>
+        <h3>AI for Product</h3>
+        <p>Can your team build AI into what you ship? Engineering density, technical stack, and strategic intent to develop and maintain AI-powered features — measured externally and confirmed internally.</p>
+      </div>
+      <div class="axis">
+        <div class="axis-num">02</div>
+        <div class="axis-tag">Axis Two</div>
+        <h3>AI for Operations</h3>
+        <p>Can your company automate its own internal processes with AI? Most high-performing product teams are still running their operations on spreadsheets and Slack threads. This is where margins go to die.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-label">Classifications</div>
+    <div class="class-list">
+      <div class="class-item">
+        <div class="class-grade grade-a">A</div>
+        <div class="class-name">
+          <strong>AI-Native</strong>
+          <span>S1 ≥ 7 · S2 ≥ 6</span>
+        </div>
+        <div class="class-desc">Building with AI and running with AI. The goal isn't to introduce it — it's to make it defensible. Track: deepen and differentiate.</div>
+      </div>
+      <div class="class-item">
+        <div class="class-grade grade-b">B</div>
+        <div class="class-name">
+          <strong>AI-Ops Gap</strong>
+          <span>S1 ≥ 7 · S2 &lt; 6</span>
+        </div>
+        <div class="class-desc">Shipping AI features while the internal operations run on manual coordination. Most common profile in early-stage — and the most dangerous at scale.</div>
+      </div>
+      <div class="class-item">
+        <div class="class-grade grade-c">C</div>
+        <div class="class-name">
+          <strong>Laggard</strong>
+          <span>S1 &lt; 7 · S2 &lt; 6</span>
+        </div>
+        <div class="class-desc">Limited observable AI activity in product or operations. The flag that triggers a deeper conversation before any implementation decision is made.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-label">Who This Is For</div>
+    <div class="cred-block">
+      <div class="cred-stats">
+        <div class="cred-stat">
+          <span class="num">4</span>
+          <span class="label">years building and deploying agentic AI systems</span>
+        </div>
+        <div class="cred-stat">
+          <span class="num">10</span>
+          <span class="label">years leading engineering teams across Mexico, the US, and China</span>
+        </div>
+      </div>
+      <div>
+        <p class="cred-bio">
+          This is for <strong>founders and operators</strong> who suspect their company is leaving AI leverage on the table — but aren't sure if the problem is in the product, the ops, or both.
+          <br><br>
+          The assessment is based on a benchmark of 180 companies across Seed, Series A, and Series B. Not a gut feeling. A scored dataset with a methodology you can interrogate.
+          <br><br>
+          I write about technology, money, and power at my Substack — the same analytical frame applies here.
+        </p>
+        <a href="https://danrodmell.substack.com" class="substack-link" target="_blank">
+          ↗ danrodmell.substack.com
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <div class="cta-section">
+    <div class="cta-eyebrow">30 Minutes. No Deck Required.</div>
+    <h2 class="cta-headline">Find out which problem you actually have.</h2>
+    <p class="cta-sub">
+      Come with a rough headcount breakdown and a one-line product description.
+      Leave with a classification and a prioritized list of tools and tasks.
+    </p>
+    <a href="https://calendly.com/mafaas/30min" target="_blank" class="cta-btn">
+      Schedule a Free Call <span class="cta-arrow">→</span>
+    </a>
+    <p class="cta-note">30 min · Calendly · No commitment</p>
+    <a href="https://adv-1-lac.vercel.app/" target="_blank" class="cta-secondary">
+      Or take the digital self-assessment →
+    </a>
+  </div>
+
+  <footer>
+    <p>Dan Melendez · AI Readiness Assessment</p>
+    <p>danrodmell.substack.com</p>
+  </footer>
+
+</div>
+</body>
+</html>
